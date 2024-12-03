@@ -36,3 +36,7 @@ build/
 
 ### Mac OS ###
 .DS_Store
+
+### Banking Database ###
+bankingdb.mv.db
+bankingdb.trace.db

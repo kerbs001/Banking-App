@@ -1,13 +1,13 @@
 package BankingApp;
 
-import java.util.ArrayList;
+
 
 public class Customer {
     private String firstName;
     private String lastName;
     private String userName;
     private String password;
-    private ArrayList<Account> accountNumbers;
+    private Account account;
 
     private int funds;
 
@@ -16,7 +16,7 @@ public class Customer {
         this.lastName = lastName;
         this.userName = userName;
         this.password = password;
-        this.accountNumbers = new ArrayList<>();
+        this.account = new Account();
     }
 
     // GETTERS
@@ -32,8 +32,8 @@ public class Customer {
     protected String getPassword() {
         return this.password;
     }
-    public ArrayList<Account> getAccountNumbers() {
-        return this.accountNumbers;
+    public String getAccountNumber() {
+        return this.account.getBankAccountNumber();
     }
 
     // SETTERS
@@ -49,12 +49,7 @@ public class Customer {
     protected void setPassword(String password) {
         this.password = password;
     }
-    protected boolean addAccountNumber(Account bankAccountNumber) {
-        if (this.accountNumbers.add(bankAccountNumber)) {
-            return true;
-        }
-        return false;
-    }
+
 
 
 

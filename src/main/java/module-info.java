@@ -6,6 +6,6 @@ module org.example.bankingapp {
     requires org.controlsfx.controls;
     requires org.kordamp.bootstrapfx.core;
     requires com.almasb.fxgl.all;
-
-    opens org.example.bankingapp to javafx.fxml;
+    requires java.sql;
+    requires h2;
 }
