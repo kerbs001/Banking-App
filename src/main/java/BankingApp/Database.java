@@ -7,6 +7,8 @@ import java.sql.*;
 public class Database {
     String databasePath;
     private static Server consoleServer;
+    String user = "admin";
+    String password = "1234";
 
     public Database(String databasePath)  {
         this.databasePath = databasePath;
@@ -14,8 +16,6 @@ public class Database {
     }
 
     private Connection createConnectionAndEnsureDatabase(String databasePath) throws SQLException {
-        String user = "admin";
-        String password = "1234";
 
         return DriverManager.getConnection(databasePath, user, password);
     }
@@ -23,9 +23,7 @@ public class Database {
     /**
      * Generate H2 Database to store credentials and fund amount of customers
      */
-    public static void generateDatabase(String databasePath) {
-        String user = "admin";
-        String password = "1234";
+    public void generateDatabase(String databasePath) {
 
         try {
             // Start H2 Console Server
