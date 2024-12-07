@@ -3,12 +3,13 @@ package BankingApp;
 import org.h2.tools.Server;
 
 import java.sql.*;
+import java.util.ArrayList;
 
 public class Database {
     String databasePath;
     private static Server consoleServer;
-    String user = "admin";
-    String password = "1234";
+    final String user = "admin";
+    final String password = "1234";
 
     public Database(String databasePath)  {
         this.databasePath = databasePath;
@@ -101,7 +102,7 @@ public class Database {
                         return false;
                     }
                 }
-                System.out.println("Account found. Generating new account number...");
+                System.out.println("Account access authorized.");
                 return true;
             }
         }
@@ -170,6 +171,55 @@ public class Database {
                     } else {
                         System.out.println("User with username '" + username + "' does not exist.");
                     }
+                }
+            }
+        }
+    }
+
+    public ArrayList<String> getExistingAccounts(String username) throws SQLException {
+        try (Connection connection = createConnectionAndEnsureDatabase(databasePath)) {
+            String idQuery = "SELECT id FROM users WHERE username = ?";
+
+            try (PreparedStatement idStmt = connection.prepareStatement(idQuery)) {
+                idStmt.setString(1, username);
+
+                try (ResultSet result = idStmt.executeQuery()) {
+                    if (result.next()) {
+                        int userId = result.getInt("id");
+                        ArrayList<String> listOfAccounts = new ArrayList<>();
+                        String listAccountsQuery = "SELECT account_number FROM accounts WHERE user_id = ?";
+
+                        try (PreparedStatement listStmt = connection.prepareStatement(listAccountsQuery)) {
+                            listStmt.setInt(1, userId);
+
+                            try (ResultSet listResult = listStmt.executeQuery()) {
+                                while (listResult.next()) {
+                                    String accountNumber = listResult.getString("account_number");
+                                    listOfAccounts.add(accountNumber);
+                                }
+                                return listOfAccounts;
+                            }
+                        }
+                    } else {
+                        return null;
+                    }
+                }
+            }
+        }
+    }
+
+    public void depositFunds(String accountNumber, Double deposit) throws SQLException {
+        try (Connection connection = createConnectionAndEnsureDatabase(databasePath)) {
+            String depositQuery = "UPDATE accounts SET fund_amount = fund_amount + ? WHERE account_number = ?";
+
+            try (PreparedStatement updateStmt = connection.prepareStatement(depositQuery)) {
+                updateStmt.setDouble(1, deposit);
+                updateStmt.setString(2, accountNumber);
+                int rowsUpdated = updateStmt.executeUpdate();
+                if (rowsUpdated > 0) {
+                    System.out.println("Deposit successful");
+                } else {
+                    System.out.println("Account not found");
                 }
             }
         }

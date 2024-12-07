@@ -1,6 +1,7 @@
 package BankingApp;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Scanner;
 
 public class TextUIApplication {
@@ -26,10 +27,13 @@ public class TextUIApplication {
                 break;
             }
             if (input == 1) {
-                CreateCustomerAccount();
+                createCustomerAccount();
             }
             if (input == 2) {
-                CreateBankAccount();
+                createBankAccount();
+            }
+            if (input == 3) {
+                depositFunds();
             }
             if (input == 9) {
                 adminControl();
@@ -42,7 +46,7 @@ public class TextUIApplication {
         this.database.hardReset();
     }
 
-    private void CreateCustomerAccount() throws SQLException {
+    private void createCustomerAccount() throws SQLException {
         System.out.println("Enter New Customer Account Details:");
         System.out.print("First name: ");
         String firstName = scanner.nextLine();
@@ -61,7 +65,7 @@ public class TextUIApplication {
         this.database.add(newCustomer, initialDeposit);
     }
 
-    private void CreateBankAccount() throws SQLException {
+    private void createBankAccount() throws SQLException {
         System.out.print("Input username: ");
         String username = scanner.nextLine();
         System.out.print("Input password: ");
@@ -76,10 +80,36 @@ public class TextUIApplication {
         }
     }
 
+    private void depositFunds() throws SQLException {
+        System.out.print("Input username: ");
+        String username = scanner.nextLine();
+        System.out.print("Input password: ");
+        String password = scanner.nextLine();
+
+        if (this.database.checkAccountExistence(username, password)) {
+
+            ArrayList<String> listOfAccounts = this.database.getExistingAccounts(username);
+            if (listOfAccounts == null) {
+                return;
+            }
+            printArrayList(listOfAccounts);
+            System.out.print("Choose which account to deposit funds to: ");
+            int index = Integer.parseInt(scanner.nextLine());
+
+            // deposit funds to account in SQL table
+            Double deposit = readDeposit();
+            if (deposit == null) {
+                return;
+            }
+            this.database.depositFunds(listOfAccounts.get(index), deposit);
+        }
+    }
+
+    // helper method
     private Double readDeposit() {
         Double deposit = null;
         try {
-            System.out.print("Initial deposit: ");
+            System.out.print("Deposit: ");
             deposit = Double.valueOf(scanner.nextLine());
 
             if (deposit <= 0.0) {
@@ -101,5 +131,11 @@ public class TextUIApplication {
         System.out.println("4: Withdraw from account");
         System.out.println("5: Apply for Loan");
         System.out.println("6: Pay Loan");
+    }
+
+    private void printArrayList(ArrayList<String> list) {
+        for (int i = 0; i < list.size(); i++) {
+            System.out.println("Index " + i + ": " + list.get(i));
+        }
     }
 }
