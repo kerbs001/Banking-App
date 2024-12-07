@@ -11,14 +11,11 @@ public class Database {
     final String user = "admin";
     final String password = "1234";
 
+
+    // Database Initialization
     public Database(String databasePath)  {
         this.databasePath = databasePath;
         generateDatabase(databasePath);
-    }
-
-    private Connection createConnectionAndEnsureDatabase(String databasePath) throws SQLException {
-
-        return DriverManager.getConnection(databasePath, user, password);
     }
 
     /**
@@ -71,43 +68,9 @@ public class Database {
         }
     }
 
-    public void stopDatabase() {
-        if (consoleServer != null) {
-            try {
-                if (consoleServer.isRunning(false)) {
-                    consoleServer.stop();
-                    System.out.println("H2 Console stopped.");
-                } else {
-                    System.out.println("H2 Console is not running.");
-                }
-            } catch (Exception e) {
-                System.err.println("Error while stopping H2 Console: " + e.getMessage());
-            }
-        } else {
-            System.out.println("H2 Console server instance is null. Nothing to stop.");
-        }
-    }
+    // ***********************
 
-    public boolean checkAccountExistence(String username, String password) throws SQLException {
-        try (Connection connection = createConnectionAndEnsureDatabase(databasePath)) {
-            String userQuery = "Select COUNT(*) FROM users WHERE username = ? AND password = ?";
-
-            try (PreparedStatement accountStmt = connection.prepareStatement(userQuery)) {
-                accountStmt.setString(1, username);
-                accountStmt.setString(2, password);
-
-                try (ResultSet result = accountStmt.executeQuery()) {
-                    if (result.next() && result.getInt(1) == 0) {
-                        System.out.println("User not found. Retry input.");
-                        return false;
-                    }
-                }
-                System.out.println("Account access authorized.");
-                return true;
-            }
-        }
-    }
-
+    // Main Methods - Bank Operations
     public void add(Customer customer, Double initialDeposit) throws SQLException {
         try (Connection connection = createConnectionAndEnsureDatabase(databasePath)) {
             // Check for uniqueness of username
@@ -176,38 +139,6 @@ public class Database {
         }
     }
 
-    public ArrayList<String> getExistingAccounts(String username) throws SQLException {
-        try (Connection connection = createConnectionAndEnsureDatabase(databasePath)) {
-            String idQuery = "SELECT id FROM users WHERE username = ?";
-
-            try (PreparedStatement idStmt = connection.prepareStatement(idQuery)) {
-                idStmt.setString(1, username);
-
-                try (ResultSet result = idStmt.executeQuery()) {
-                    if (result.next()) {
-                        int userId = result.getInt("id");
-                        ArrayList<String> listOfAccounts = new ArrayList<>();
-                        String listAccountsQuery = "SELECT account_number FROM accounts WHERE user_id = ?";
-
-                        try (PreparedStatement listStmt = connection.prepareStatement(listAccountsQuery)) {
-                            listStmt.setInt(1, userId);
-
-                            try (ResultSet listResult = listStmt.executeQuery()) {
-                                while (listResult.next()) {
-                                    String accountNumber = listResult.getString("account_number");
-                                    listOfAccounts.add(accountNumber);
-                                }
-                                return listOfAccounts;
-                            }
-                        }
-                    } else {
-                        return null;
-                    }
-                }
-            }
-        }
-    }
-
     public void depositFunds(String accountNumber, Double deposit) throws SQLException {
         try (Connection connection = createConnectionAndEnsureDatabase(databasePath)) {
             String depositQuery = "UPDATE accounts SET fund_amount = fund_amount + ? WHERE account_number = ?";
@@ -220,6 +151,42 @@ public class Database {
                     System.out.println("Deposit successful");
                 } else {
                     System.out.println("Account not found");
+                }
+            }
+        }
+    }
+
+    // Main Methods - Admin Operations
+    public ArrayList<String> getAllUsernames() throws SQLException {
+        ArrayList<String> listOfUsernames = new ArrayList<>();
+        try (Connection connection = createConnectionAndEnsureDatabase(databasePath)) {
+            String usernameQuery = "SELECT id, username FROM users ";
+            try (PreparedStatement usernameStmt = connection.prepareStatement(usernameQuery)) {
+                try (ResultSet allUsernames = usernameStmt.executeQuery()) {
+                    while (allUsernames.next()) {
+                        String formattedUser = allUsernames.getString("id") + ": " + allUsernames.getString("username");
+
+                        // Add to the list.
+                        listOfUsernames.add(formattedUser);
+                    }
+                    return listOfUsernames;
+                }
+            }
+        }
+    }
+
+    public ArrayList<String> getAllBankAccountNumbers() throws SQLException {
+        ArrayList<String> listOfBankAccountNumbers = new ArrayList<>();
+        try (Connection connection = createConnectionAndEnsureDatabase(databasePath)) {
+            String bankAccountQuery = "SELECT user_id, account_number FROM accounts ";
+            try (PreparedStatement bankAccountStmt = connection.prepareStatement(bankAccountQuery)) {
+                try (ResultSet allBankAccounts = bankAccountStmt.executeQuery()) {
+                    while (allBankAccounts.next()) {
+                        String formattedUser = allBankAccounts.getString("user_id") + ": " + allBankAccounts.getString("account_number");
+                        // Add to the list.
+                        listOfBankAccountNumbers.add(formattedUser);
+                    }
+                    return listOfBankAccountNumbers;
                 }
             }
         }
@@ -252,6 +219,81 @@ public class Database {
                 connection.rollback();
                 System.out.println("Error in truncating tables, transaction rolled back");
                 throw e;
+            }
+        }
+    }
+
+    // Helper Methods
+    private Connection createConnectionAndEnsureDatabase(String databasePath) throws SQLException {
+
+        return DriverManager.getConnection(databasePath, user, password);
+    }
+
+    public void stopDatabase() {
+        if (consoleServer != null) {
+            try {
+                if (consoleServer.isRunning(false)) {
+                    consoleServer.stop();
+                    System.out.println("H2 Console stopped.");
+                } else {
+                    System.out.println("H2 Console is not running.");
+                }
+            } catch (Exception e) {
+                System.err.println("Error while stopping H2 Console: " + e.getMessage());
+            }
+        } else {
+            System.out.println("H2 Console server instance is null. Nothing to stop.");
+        }
+    }
+
+    public boolean checkAccountExistence(String username, String password) throws SQLException {
+        try (Connection connection = createConnectionAndEnsureDatabase(databasePath)) {
+            String userQuery = "Select COUNT(*) FROM users WHERE username = ? AND password = ?";
+
+            try (PreparedStatement accountStmt = connection.prepareStatement(userQuery)) {
+                accountStmt.setString(1, username);
+                accountStmt.setString(2, password);
+
+                try (ResultSet result = accountStmt.executeQuery()) {
+                    if (result.next() && result.getInt(1) == 0) {
+                        System.out.println("User not found. Retry input.");
+                        return false;
+                    }
+                }
+                System.out.println("Account access authorized.");
+                return true;
+            }
+        }
+    }
+
+    public ArrayList<String> getExistingAccounts(String username) throws SQLException {
+        try (Connection connection = createConnectionAndEnsureDatabase(databasePath)) {
+            String idQuery = "SELECT id FROM users WHERE username = ?";
+
+            try (PreparedStatement idStmt = connection.prepareStatement(idQuery)) {
+                idStmt.setString(1, username);
+
+                try (ResultSet result = idStmt.executeQuery()) {
+                    if (result.next()) {
+                        int userId = result.getInt("id");
+                        ArrayList<String> listOfAccounts = new ArrayList<>();
+                        String listAccountsQuery = "SELECT account_number FROM accounts WHERE user_id = ?";
+
+                        try (PreparedStatement listStmt = connection.prepareStatement(listAccountsQuery)) {
+                            listStmt.setInt(1, userId);
+
+                            try (ResultSet listResult = listStmt.executeQuery()) {
+                                while (listResult.next()) {
+                                    String accountNumber = listResult.getString("account_number");
+                                    listOfAccounts.add(accountNumber);
+                                }
+                                return listOfAccounts;
+                            }
+                        }
+                    } else {
+                        return null;
+                    }
+                }
             }
         }
     }
