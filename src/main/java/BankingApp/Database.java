@@ -156,6 +156,41 @@ public class Database {
         }
     }
 
+    public void withdrawFunds(String accountNumber, Double withdraw) throws SQLException {
+
+        if (isWithdrawValid(accountNumber, withdraw)) {
+            try (Connection connection = createConnectionAndEnsureDatabase(databasePath)) {
+                String withdrawQuery = "UPDATE accounts SET fund_amount = fund_amount - ? WHERE account_number = ?";
+                try (PreparedStatement withdrawStmt = connection.prepareStatement(withdrawQuery)) {
+                    withdrawStmt.setDouble(1, withdraw);
+                    withdrawStmt.setString(2, accountNumber);
+                    int rowsUpdated = withdrawStmt.executeUpdate();
+                    if (rowsUpdated > 0) {
+                        System.out.println("Withdraw successful.");
+                    } else {
+                        System.out.println("Withdraw unsuccessful.");
+                    }
+                }
+            }
+        } else {
+            System.out.println("Invalid withdraw amount. Existing funds not sufficient.");
+        }
+    }
+
+    public void loanApplication(String accountNumber, Double loan) throws SQLException {
+        try (Connection connection = createConnectionAndEnsureDatabase(databasePath)) {
+            String loanQuery = "UPDATE accounts SET loan_amount = loan_amount + ? WHERE account_number = ?";
+            try (PreparedStatement loanStmt = connection.prepareStatement(loanQuery)) {
+                loanStmt.setDouble(1, loan);
+                loanStmt.setString(2, accountNumber);
+                int rowsUpdated = loanStmt.executeUpdate();
+                if (rowsUpdated > 0) {
+                    System.out.println("Loan successful.");
+                }
+            }
+        }
+    }
+
     // Main Methods - Admin Operations
     public ArrayList<String> getAllUsernames() throws SQLException {
         ArrayList<String> listOfUsernames = new ArrayList<>();
@@ -298,4 +333,19 @@ public class Database {
         }
     }
 
+    public boolean isWithdrawValid(String accountNumber, Double withdraw) throws SQLException {
+        try (Connection connection = createConnectionAndEnsureDatabase(databasePath)) {
+            String checkFundQuery = "SELECT fund_amount FROM accounts WHERE account_number = ?";
+            try (PreparedStatement checkFundStmt = connection.prepareStatement(checkFundQuery)) {
+                checkFundStmt.setString(1, accountNumber);
+                try (ResultSet existingFunds = checkFundStmt.executeQuery()) {
+                    if (existingFunds.next()) {
+                        double currentFunds = existingFunds.getDouble("fund_amount");
+                        return currentFunds >= withdraw;
+                    }
+                }
+            }
+        }
+        return false;
+    }
 }

@@ -14,33 +14,45 @@ public class TextUIApplication {
     }
 
     // Bank Operations - Main UI
-    public void start() throws SQLException{
+    public void start(){
 
         System.out.println("Hello! Welcome to my banking app!");
 
-        while (true) {
-            printTextInstructions();
-            System.out.print("Please select operation: ");
-            int input = Integer.parseInt(scanner.nextLine());
+        try {
+            while (true) {
+                printTextInstructions();
+                System.out.print("Please select operation: ");
+                int input = Integer.parseInt(scanner.nextLine());
 
-            if (input == 0) {
-                this.database.stopDatabase();
-                System.out.println("Thanks. Have a good day!");
-                break;
+                if (input == 0) {
+                    this.database.stopDatabase();
+                    System.out.println("Thanks. Have a good day!");
+                    break;
+                }
+                if (input == 1) {
+                    createCustomerAccount();
+                }
+                if (input == 2) {
+                    createBankAccount();
+                }
+                if (input == 3) {
+                    depositFunds();
+                }
+                if (input == 4) {
+                    withdrawFunds();
+                }
+                if (input == 5) {
+                    applyLoan();
+                }
+
+                if (input == 9) {
+                    adminControl();
+                }
             }
-            if (input == 1) {
-                createCustomerAccount();
-            }
-            if (input == 2) {
-                createBankAccount();
-            }
-            if (input == 3) {
-                depositFunds();
-            }
-            if (input == 9) {
-                adminControl();
-            }
+        } catch (Exception e) {
+            System.out.println("Error: " + e.getLocalizedMessage());
         }
+
 
     }
 
@@ -78,6 +90,9 @@ public class TextUIApplication {
             }
         }
     }
+
+    // Loan Operations - Main UI
+
 
     // Main Bank Methods
     private void createCustomerAccount() throws SQLException {
@@ -144,6 +159,86 @@ public class TextUIApplication {
         }
     }
 
+    private void withdrawFunds() throws SQLException {
+        System.out.print("Input username: ");
+        String username = scanner.nextLine();
+        System.out.print("Input password: ");
+        String password = scanner.nextLine();
+
+        if (this.database.checkAccountExistence(username, password)) {
+
+            ArrayList<String> listOfAccounts = this.database.getExistingAccounts(username);
+            if (listOfAccounts == null) {
+                return;
+            }
+            printArrayListWithIndex(listOfAccounts);
+
+            try {
+                System.out.print("Choose which account to deposit funds to: ");
+                int index = Integer.parseInt(scanner.nextLine());
+                System.out.println("How much do you want to withdraw?");
+                Double toWithdraw = Double.valueOf(scanner.nextLine());
+
+                // deposit funds to account in SQL table
+                this.database.withdrawFunds(listOfAccounts.get(index), toWithdraw);
+
+            } catch (Exception e) {
+                System.out.println("Error: " + e.getLocalizedMessage());
+            }
+        }
+    }
+
+    private void applyLoan() throws SQLException {
+        System.out.print("Input username: ");
+        String username = scanner.nextLine();
+        System.out.print("Input password: ");
+        String password = scanner.nextLine();
+
+        if (this.database.checkAccountExistence(username, password)) {
+
+            ArrayList<String> listOfAccounts = this.database.getExistingAccounts(username);
+            if (listOfAccounts == null) {
+                return;
+            }
+            printArrayListWithIndex(listOfAccounts);
+
+            try {
+                System.out.print("Choose which account to deposit loaned funds to: ");
+                int index = Integer.parseInt(scanner.nextLine());
+                System.out.println("How much do you want to loan?");
+                double toLoan = Double.parseDouble(scanner.nextLine());
+
+                printLoanInstructions();
+
+                System.out.print("Please select loan deferment basis: ");
+                double percentageIncrease = 0.0;
+
+                int input = Integer.parseInt(scanner.nextLine());
+
+                if (input == 1) {
+                    percentageIncrease = 1.0;
+                } else if (input == 2) {
+                    percentageIncrease = 1.05;
+                } else if (input == 3) {
+                    percentageIncrease = 1.10;
+                } else if (input == 4) {
+                    return;
+                }
+
+                if (percentageIncrease == 0.0) {
+                    System.out.println("Invalid input.");
+                    return;
+                }
+
+                this.database.loanApplication(listOfAccounts.get(index), toLoan * percentageIncrease);
+                this.database.depositFunds(listOfAccounts.get(index), toLoan);
+
+            } catch (Exception e) {
+                System.out.println("Error: " + e.getLocalizedMessage());
+            }
+        }
+    }
+
     // Helper Methods
     private Double readDeposit() {
         Double deposit = null;
@@ -185,11 +280,22 @@ public class TextUIApplication {
         System.out.println();
     }
 
+    private void printLoanInstructions() {
+        System.out.println();
+        System.out.println("*** Loan Deferment Options ***");
+        System.out.println("1: Pay later (1 month: 0%)");
+        System.out.println("2: Pay after 3 months (5%)");
+        System.out.println("3: Pay after 6 months (10%)");
+        System.out.println("4: Return to bank operations");
+        System.out.println();
+    }
+
     private void printArrayList(ArrayList<String> list) {
         for (String string : list) {
             System.out.println(string);
         }
     }
+
     private void printArrayListWithIndex(ArrayList<String> list) {
         for (int i = 0; i < list.size(); i++) {
             System.out.println("Index " + i + ": " + list.get(i));
