@@ -38,7 +38,9 @@ The **BankingApp** is a Java-based text banking application designed to manage c
 1. Clone the repository:
    ```bash
    git clone https://github.com/your-repository/BankingApp.git
-
+2. Ensure that the H2 database server is set up correctly. The app will automatically start the H2 server and the console for you.
+3. Build and run the application. It will start the H2 database server and open the web console at `http://localhost:8082` for administrative access.
+   
 ## Database Schema
 
 ### Users Table 
