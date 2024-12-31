@@ -8,7 +8,7 @@ public class AccountNumberGenerator {
     /**
      * Generate account number for customer. Uses generateBaseNumber() and calculateLuhnChecksum() methods.
      *
-     * @return
+     * @return accountNumber
      */
     public static String generateAccountNumber() {
         int baseLength = AccountNumberLength -1;
