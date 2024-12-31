@@ -58,36 +58,45 @@ public class TextUIApplication {
 
     // Admin Operations - Main UI
     private void adminControl() throws SQLException {
-        while (true) {
-            printAdminControlInstructions();
+        System.out.print("Admin username: ");
+        String username = scanner.nextLine();
+        System.out.print("Admin password: ");
+        String password = scanner.nextLine();
 
-            System.out.print("Please select admin operation: ");
-            int input = Integer.parseInt(scanner.nextLine());
+        if (username.equals("admin") && password.equals("1234")) {
+            while (true) {
+                printAdminControlInstructions();
 
-            if (input == 1) {
-                ArrayList<String> allUsernames = this.database.getAllUsernames();
-                if (allUsernames.isEmpty()) {
-                    System.out.println("List of usernames is empty.");
-                } else {
-                    printArrayList(allUsernames);
+                System.out.print("Please select admin operation: ");
+                int input = Integer.parseInt(scanner.nextLine());
+
+                if (input == 1) {
+                    ArrayList<String> allUsernames = this.database.getAllUsernames();
+                    if (allUsernames.isEmpty()) {
+                        System.out.println("List of usernames is empty.");
+                    } else {
+                        printArrayList(allUsernames);
+                    }
+                }
+                if (input == 2) {
+                    ArrayList<String> allBankAccounts = this.database.getAllBankAccountNumbers();
+                    if (allBankAccounts.isEmpty()) {
+                        System.out.println("List of bank account numbers is empty.");
+                    } else {
+                        printArrayList(allBankAccounts);
+                    }
+                }
+
+                if (input == 3) {
+                    this.database.hardReset();
+                }
+
+                if (input == 4) {
+                    break;
                 }
             }
-            if (input == 2) {
-                ArrayList<String> allBankAccounts = this.database.getAllBankAccountNumbers();
-                if (allBankAccounts.isEmpty()) {
-                    System.out.println("List of bank account numbers is empty.");
-                } else {
-                    printArrayList(allBankAccounts);
-                }
-            }
-
-            if (input == 3) {
-                this.database.hardReset();
-            }
-
-            if (input == 4) {
-                break;
-            }
+        } else {
+            System.out.println("Wrong admin username and/or password.");
         }
     }
 

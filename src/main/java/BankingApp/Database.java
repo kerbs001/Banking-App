@@ -79,44 +79,21 @@ public class Database {
     // ***********************
 
     // Main Methods - Bank Operations
+
+
+
+    // Adding User in Database
     public void add(Customer customer, Double initialDeposit) throws SQLException {
         try (Connection connection = getConnection()) {
-            // Check for uniqueness of username
-            String userQuery = "SELECT COUNT(*) FROM users WHERE username = ?";
-            try (PreparedStatement userStmt = connection.prepareStatement(userQuery)) {
-                userStmt.setString(1, customer.getUserName());
-                try (ResultSet result = userStmt.executeQuery()) {
-                    if (result.next() && result.getInt(1) > 0) {
-                        System.out.println("Username '" + customer.getUserName() + "' already exists. Skipping insert.");
-                        return; // Early exit for duplicates
-                    }
-                }
+            if (isUsernameTaken(connection, customer.getUserName())) {
+                System.out.println("Username '" + customer.getUserName() + "' already exists. Skipping insert.");
+                return;
             }
+            int userId = insertUser(connection, customer);
+            if (userId != -1) {
+                insertAccount(connection, userId, customer, initialDeposit);
+                System.out.println("Customer and account created successfully.");
 
-            String insertQuery = "INSERT INTO users (first_name, last_name, username, password) VALUES (?, ?, ?, ?)";
-            try (PreparedStatement insertStmt = connection.prepareStatement(insertQuery, Statement.RETURN_GENERATED_KEYS)) {
-                insertStmt.setString(1, customer.getFirstName());
-                insertStmt.setString(2, customer.getLastName());
-                insertStmt.setString(3, customer.getUserName());
-                insertStmt.setString(4, customer.getPassword());
-                insertStmt.executeUpdate();
-
-                try (ResultSet generatedKeys = insertStmt.getGeneratedKeys()) {
-                    if (generatedKeys.next()) {
-                        int userId = generatedKeys.getInt(1);
-                        String insertAccountQuery = "INSERT INTO accounts (account_number, user_id, fund_amount, loan_amount) VALUES (?, ?, ?, ?)";
-                        try (PreparedStatement accountStmt = connection.prepareStatement(insertAccountQuery)) {
-                            accountStmt.setString(1, customer.getAccountNumber());
-                            accountStmt.setInt(2, userId);
-                            accountStmt.setDouble(3, initialDeposit);
-                            accountStmt.setDouble(4, 0.0);
-                            accountStmt.executeUpdate();
-                            System.out.println("Customer and account created successfully.");
-                        }
-                    } else {
-                        System.out.println("Failed to retrieve user ID. Account creation aborted.");
-                    }
-                }
             }
         }
     }
@@ -266,12 +243,13 @@ public class Database {
         }
     }
 
-    // Helper Methods
+    // ------------------- HELPER METHODS
+
+    // **CONNECTION
     private Connection getConnection() throws SQLException {
 
         return dataSource.getConnection();
     }
-
     public void stopDatabase() {
         if (consoleServer != null) {
             consoleServer.stop();
@@ -282,6 +260,44 @@ public class Database {
             System.out.println("HikariCP DataSource closed.");
         }
     }
+
+    // **ADDING USER
+    private boolean isUsernameTaken(Connection connection, String username) throws SQLException {
+        String userQuery = "SELECT COUNT(*) FROM users WHERE username = ?";
+
+        try (PreparedStatement userStmt = connection.prepareStatement(userQuery)) {
+            userStmt.setString(1, username);
+            try (ResultSet result = userStmt.executeQuery()) {
+                return result.next() && result.getInt(1) > 0;
+            }
+        }
+    }
+    private int insertUser(Connection connection, Customer customer) throws SQLException {
+        String insertQuery = "INSERT INTO users (first_name, last_name, username, password) VALUES (?, ?, ?, ?)";
+        try (PreparedStatement stmt = connection.prepareStatement(insertQuery, Statement.RETURN_GENERATED_KEYS)) {
+            stmt.setString(1, customer.getFirstName());
+            stmt.setString(2, customer.getLastName());
+            stmt.setString(3, customer.getUserName());
+            stmt.setString(4, customer.getPassword());
+            stmt.executeUpdate();
+            try (ResultSet keys = stmt.getGeneratedKeys()) {
+                if (keys.next()) return keys.getInt(1);
+            }
+        }
+        return -1;
+    }
+    private void insertAccount(Connection connection, int userId, Customer customer, double initialDeposit) throws SQLException {
+        String insertQuery = "INSERT INTO accounts (account_number, user_id, fund_amount, loan_amount) VALUES (?, ?, ?, ?)";
+        try (PreparedStatement stmt = connection.prepareStatement(insertQuery)) {
+            stmt.setString(1, customer.getAccountNumber());
+            stmt.setInt(2, userId);
+            stmt.setDouble(3, initialDeposit);
+            stmt.setDouble(4, 0.0);
+            stmt.executeUpdate();
+        }
+    }
+
+
 
     public boolean checkAccountExistence(String username, String password) throws SQLException {
         try (Connection connection = getConnection()) {
