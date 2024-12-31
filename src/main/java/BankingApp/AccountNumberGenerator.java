@@ -68,11 +68,11 @@ public class AccountNumberGenerator {
         for (int i = baseNumber.length() - 1; i >= 0; i--) {
             int digit = Character.getNumericValue(baseNumber.charAt(i));
             if (alternate) {
-                    digit *= 2;
-                    if (digit > 9) {
-                        digit -= 9;
-                    }
+                digit *= 2;
+                if (digit > 9) {
+                    digit -= 9;
                 }
+            }
             alternate = !alternate;
             sum += digit;
         }

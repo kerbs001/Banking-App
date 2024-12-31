@@ -152,7 +152,7 @@ public class TextUIApplication {
                 if (deposit == null) {
                     return;
                 }
-                this.database.depositFunds(listOfAccounts.get(index), deposit);
+                this.database.depositFunds(listOfAccounts.get(index - 1), deposit);
             } catch (Exception e) {
                 System.out.println("Error: " + e.getLocalizedMessage());
             }
@@ -298,7 +298,7 @@ public class TextUIApplication {
 
     private void printArrayListWithIndex(ArrayList<String> list) {
         for (int i = 0; i < list.size(); i++) {
-            System.out.println("Index " + i + ": " + list.get(i));
+            System.out.println((i + 1) + ": " + list.get(i));
         }
     }
 }
