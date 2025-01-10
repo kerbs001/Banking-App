@@ -1,16 +1,28 @@
-package BankingApp;
+package BankingApp.ui;
+
+import BankingApp.database.AccountDAO;
+import BankingApp.database.CustomerDAO;
+import BankingApp.database.Database;
+import BankingApp.model.Customer;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Scanner;
 
-public class TextUIApplication {
+public class BankOperationsUI {
     private final Scanner scanner;
-    private final Database database;
 
-    public TextUIApplication(Scanner scanner, Database database) {
+    private final AdminOperationsUI adminOperationsUI;
+    private final Database database;
+    private final AccountDAO accountDAO;
+    private final CustomerDAO customerDAO;
+
+    public BankOperationsUI(Scanner scanner, Database database) {
         this.scanner = scanner;
         this.database = database;
+        this.accountDAO = new AccountDAO(this.database);
+        this.customerDAO = new CustomerDAO(this.database);
+        this.adminOperationsUI = new AdminOperationsUI(scanner, database);
     }
 
     // Bank Operations - Main UI
@@ -25,28 +37,25 @@ public class TextUIApplication {
                 int input = Integer.parseInt(scanner.nextLine());
 
                 if (input == 0) {
-                    this.database.stopDatabase();
+                    database.stopDatabase();
                     System.out.println("Thanks. Have a good day!");
                     break;
-                }
-                if (input == 1) {
+                } else if (input == 1) {
                     createCustomerAccount();
-                }
-                if (input == 2) {
+                } else if (input == 2) {
                     createBankAccount();
-                }
-                if (input == 3) {
+                } else if (input == 3) {
+                    getBalances();
+                } else if (input == 4) {
                     depositFunds();
-                }
-                if (input == 4) {
+                } else if (input == 5) {
                     withdrawFunds();
-                }
-                if (input == 5) {
+                } else if (input == 6) {
                     applyLoan();
-                }
-
-                if (input == 9) {
-                    adminControl();
+                } else if (input == 7) {
+                    payLoan();
+                } else if (input == 9) {
+                    this.adminOperationsUI.startAdminControls();
                 }
             }
         } catch (Exception e) {
@@ -55,53 +64,6 @@ public class TextUIApplication {
 
 
     }
-
-    // Admin Operations - Main UI
-    private void adminControl() throws SQLException {
-        System.out.print("Admin username: ");
-        String username = scanner.nextLine();
-        System.out.print("Admin password: ");
-        String password = scanner.nextLine();
-
-        if (username.equals("admin") && password.equals("1234")) {
-            while (true) {
-                printAdminControlInstructions();
-
-                System.out.print("Please select admin operation: ");
-                int input = Integer.parseInt(scanner.nextLine());
-
-                if (input == 1) {
-                    ArrayList<String> allUsernames = this.database.getAllUsernames();
-                    if (allUsernames.isEmpty()) {
-                        System.out.println("List of usernames is empty.");
-                    } else {
-                        printArrayList(allUsernames);
-                    }
-                }
-                if (input == 2) {
-                    ArrayList<String> allBankAccounts = this.database.getAllBankAccountNumbers();
-                    if (allBankAccounts.isEmpty()) {
-                        System.out.println("List of bank account numbers is empty.");
-                    } else {
-                        printArrayList(allBankAccounts);
-                    }
-                }
-
-                if (input == 3) {
-                    this.database.hardReset();
-                }
-
-                if (input == 4) {
-                    break;
-                }
-            }
-        } else {
-            System.out.println("Wrong admin username and/or password.");
-        }
-    }
-
-    // Loan Operations - Main UI
-
 
     // Main Bank Methods
     private void createCustomerAccount() throws SQLException {
@@ -120,33 +82,24 @@ public class TextUIApplication {
             return;
         }
         Customer newCustomer = new Customer(firstName, lastName, username, password);
-        this.database.add(newCustomer, initialDeposit);
+        this.customerDAO.add(newCustomer, initialDeposit);
     }
 
     private void createBankAccount() throws SQLException {
-        System.out.print("Input username: ");
-        String username = scanner.nextLine();
-        System.out.print("Input password: ");
-        String password = scanner.nextLine();
-
-        if (this.database.checkAccountExistence(username, password)) {
+        String selectedUser = returnedUser();
+        if (selectedUser != null) {
             Double initialDeposit = readDeposit();
             if (initialDeposit == null) {
                 return;
             }
-            this.database.generateBankAccount(username, initialDeposit);
+            this.accountDAO.generateBankAccount(selectedUser, initialDeposit);
         }
     }
 
     private void depositFunds() throws SQLException {
-        System.out.print("Input username: ");
-        String username = scanner.nextLine();
-        System.out.print("Input password: ");
-        String password = scanner.nextLine();
-
-        if (this.database.checkAccountExistence(username, password)) {
-
-            ArrayList<String> listOfAccounts = this.database.getExistingAccounts(username);
+        String selectedUser = returnedUser();
+        if (selectedUser != null) {
+            ArrayList<String> listOfAccounts = this.accountDAO.getExistingAccounts(selectedUser);
             if (listOfAccounts == null) {
                 return;
             }
@@ -161,7 +114,7 @@ public class TextUIApplication {
                 if (deposit == null) {
                     return;
                 }
-                this.database.depositFunds(listOfAccounts.get(index - 1), deposit);
+                this.accountDAO.addFunds(listOfAccounts.get(index - 1), deposit);
             } catch (Exception e) {
                 System.out.println("Error: " + e.getLocalizedMessage());
             }
@@ -169,14 +122,9 @@ public class TextUIApplication {
     }
 
     private void withdrawFunds() throws SQLException {
-        System.out.print("Input username: ");
-        String username = scanner.nextLine();
-        System.out.print("Input password: ");
-        String password = scanner.nextLine();
-
-        if (this.database.checkAccountExistence(username, password)) {
-
-            ArrayList<String> listOfAccounts = this.database.getExistingAccounts(username);
+        String selectedUser = returnedUser();
+        if (selectedUser != null) {
+            ArrayList<String> listOfAccounts = this.accountDAO.getExistingAccounts(selectedUser);
             if (listOfAccounts == null) {
                 return;
             }
@@ -189,7 +137,7 @@ public class TextUIApplication {
                 Double toWithdraw = Double.valueOf(scanner.nextLine());
 
                 // deposit funds to account in SQL table
-                this.database.withdrawFunds(listOfAccounts.get(index), toWithdraw);
+                this.accountDAO.decreaseFunds(listOfAccounts.get(index - 1), toWithdraw);
 
             } catch (Exception e) {
                 System.out.println("Error: " + e.getLocalizedMessage());
@@ -197,15 +145,27 @@ public class TextUIApplication {
         }
     }
 
+    private void getBalances() throws SQLException {
+        String selectedUser = returnedUser();
+        if (selectedUser != null) {
+            ArrayList<String> listOfAccounts = this.accountDAO.getExistingAccounts(selectedUser);
+            if (listOfAccounts == null) {
+                return;
+            }
+            printArrayListWithIndex(listOfAccounts);
+            System.out.print("Choose which account to deposit loaned funds to: ");
+            int index = Integer.parseInt(scanner.nextLine());
+            System.out.println();
+            System.out.println("Existing funds: " + this.accountDAO.getFunds(listOfAccounts.get(index - 1)));
+            System.out.println("Existing loan balance: " + this.accountDAO.getLoanBalance(listOfAccounts.get(index - 1)));
+        }
+    }
+
     private void applyLoan() throws SQLException {
-        System.out.print("Input username: ");
-        String username = scanner.nextLine();
-        System.out.print("Input password: ");
-        String password = scanner.nextLine();
+        String selectedUser = returnedUser();
+        if (selectedUser != null) {
 
-        if (this.database.checkAccountExistence(username, password)) {
-
-            ArrayList<String> listOfAccounts = this.database.getExistingAccounts(username);
+            ArrayList<String> listOfAccounts = this.accountDAO.getExistingAccounts(selectedUser);
             if (listOfAccounts == null) {
                 return;
             }
@@ -239,11 +199,54 @@ public class TextUIApplication {
                     return;
                 }
 
-                this.database.loanApplication(listOfAccounts.get(index), toLoan * percentageIncrease);
-                this.database.depositFunds(listOfAccounts.get(index), toLoan);
+                this.accountDAO.loanApplication(listOfAccounts.get(index - 1), toLoan * percentageIncrease);
+                this.accountDAO.addFunds(listOfAccounts.get(index - 1), toLoan);
 
             } catch (Exception e) {
                 System.out.println("Error: " + e.getLocalizedMessage());
+            }
+        }
+    }
+
+    private void payLoan() throws SQLException {
+
+        String selectedUser = returnedUser();
+        if (selectedUser != null) {
+
+            ArrayList<String> listOfAccounts = this.accountDAO.getExistingAccounts(selectedUser);
+            if (listOfAccounts == null) {
+                return;
+            }
+            printArrayListWithIndex(listOfAccounts);
+
+            try {
+                System.out.print("Choose which account to deposit loaned funds to: ");
+                int index = Integer.parseInt(scanner.nextLine());
+
+                String accountNumber = listOfAccounts.get(index - 1);
+                Double loanBalance = this.accountDAO.getLoanBalance(accountNumber);
+
+                if (loanBalance <= 0) {
+                    System.out.println("No outstanding loan balance for this account.");
+                    return;
+                }
+
+                System.out.println("Existing loan balance of account '" + listOfAccounts.get(index - 1) + "' is: " + loanBalance);
+                System.out.print("Please enter how much to deposit (Excess amount to be deposited to existing funds): ");
+                double payment = Double.parseDouble(scanner.nextLine());
+
+                if (payment <= 0) {
+                    System.out.println("Payment amount must be positive.");
+                    return;
+                }
+
+                double excessPayment = this.accountDAO.payLoan(accountNumber, payment);
+                if (excessPayment > 0) {
+                    this.accountDAO.addFunds(accountNumber, excessPayment);
+                }
+
+            } catch (NumberFormatException e) {
+                throw new RuntimeException(e);
             }
         }
     }
@@ -271,21 +274,12 @@ public class TextUIApplication {
         System.out.println("--- Bank Operations ---");
         System.out.println("1: Create customer account");
         System.out.println("2: Generate bank account for existing customer account");
-        System.out.println("3: Deposit into account");
-        System.out.println("4: Withdraw from account");
-        System.out.println("5: Apply for Loan");
-        System.out.println("6: Pay Loan");
+        System.out.println("3: Get fund and loan balances");
+        System.out.println("4: Deposit into account");
+        System.out.println("5: Withdraw from account");
+        System.out.println("6: Apply for Loan");
+        System.out.println("7: Pay Loan");
         System.out.println("9: Admin controls");
-        System.out.println();
-    }
-
-    private void printAdminControlInstructions() {
-        System.out.println();
-        System.out.println("*** Admin Control Operations ***");
-        System.out.println("1: List all usernames");
-        System.out.println("2: List all bank account numbers");
-        System.out.println("3: Truncate all tables");
-        System.out.println("4: Return to bank operations");
         System.out.println();
     }
 
@@ -299,15 +293,22 @@ public class TextUIApplication {
         System.out.println();
     }
 
-    private void printArrayList(ArrayList<String> list) {
-        for (String string : list) {
-            System.out.println(string);
-        }
-    }
-
     private void printArrayListWithIndex(ArrayList<String> list) {
         for (int i = 0; i < list.size(); i++) {
             System.out.println((i + 1) + ": " + list.get(i));
         }
     }
+
+    private String returnedUser() throws SQLException {
+        System.out.print("Input username: ");
+        String username = scanner.nextLine();
+        System.out.print("Input password: ");
+        String password = scanner.nextLine();
+        if (this.accountDAO.checkAccountExistence(username, password)) {
+            return username;
+        }
+        return null;
+    }
+
+
 }

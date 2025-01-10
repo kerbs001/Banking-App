@@ -1,7 +1,9 @@
-package BankingApp;
+package BankingApp.model;
+
+import BankingApp.utils.AccountNumberGenerator;
 
 public class Account {
-    private String bankAccountNumber;
+    private final String bankAccountNumber;
     private int funds;
 
     public Account() {
@@ -12,16 +14,7 @@ public class Account {
         this.bankAccountNumber = AccountNumberGenerator.generateAccountNumber();
         this.funds = initialDeposit;
     }
-    public void addFunds(int deposit) {
-        this.funds += deposit;
-    }
-    public boolean withdrawFunds(int toWithdraw) {
-        return this.funds >= toWithdraw;
-    }
 
-    public int getFunds() {
-        return this.funds;
-    }
     public String getBankAccountNumber() {
         return this.bankAccountNumber;
     }

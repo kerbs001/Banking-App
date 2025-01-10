@@ -1,5 +1,4 @@
-package BankingApp;
-
+package BankingApp.model;
 
 
 public class Customer {
@@ -7,7 +6,7 @@ public class Customer {
     private String lastName;
     private String userName;
     private String password;
-    private Account account;
+    private final Account account;
 
     private int funds;
 
@@ -29,7 +28,7 @@ public class Customer {
     public String getUserName() {
         return this.userName;
     }
-    protected String getPassword() {
+    public String getPassword() {
         return this.password;
     }
     public String getAccountNumber() {

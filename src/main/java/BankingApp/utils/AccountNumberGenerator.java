@@ -1,4 +1,4 @@
-package BankingApp;
+package BankingApp.utils;
 import java.util.Random;
 
 public class AccountNumberGenerator {
